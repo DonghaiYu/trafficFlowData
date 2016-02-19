@@ -18,7 +18,14 @@ import java.util.Set;
  * @description 将一天的数据重组为t个时段一组
  *
  */
-
+/**
+ * 
+ * @author DonghaiYu
+ * @description traffic Flow prediction Experiment Step 
+ * @input traffic flow data for per ID and per day(folder collection)
+ * @output  traffic flow data for per ID and all day(folder byids)
+ *
+ */
 
 
 public class Spliter {

@@ -11,12 +11,12 @@ import java.util.Scanner;
 /**
  * 
  * @author DonghaiYu
- * @description traffic Flow prediction Experiment Step 2
- * @input traffic flow data for per ID and per day(folder collection)
- * @output  traffic flow data for per ID and all day(folder byids)
+ * @description traffic Flow prediction Experiment Data preparation Part Step 2 (Collection traffic flow data by ID)
+ * @input traffic flow data for per ID of per day(folder collection)
+ * @output  traffic flow data for per ID of all day(folder byids)
  *
  */
-public class b_Collection {
+public class B_Collection {
 	
 	public static String inputPath = "result/collection";
 	public static String savePath = "result/byids/";

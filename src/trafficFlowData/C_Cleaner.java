@@ -15,7 +15,7 @@ import java.util.Scanner;
  *				如果一个卡口有记录的天数少于minLineNum则认为无效，删除。
  */
 
-public class Cleaner {
+public class C_Cleaner {
 	
 	public static int sum(String line) {
 		int sum = 0;

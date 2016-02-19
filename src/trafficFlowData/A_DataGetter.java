@@ -22,13 +22,13 @@ import java.util.Set;
 /**
  * 
  * @author DonghaiYu
- * @description traffic Flow prediction Experiment Step 1
+ * @description traffic Flow prediction Experiment Data preparation Part Step 1 (pass record data to traffic flow data)
  * @input raw data of cars' pass records(folder rawData)
- * @output  traffic flow data for per ID and per day(folder collection)
+ * @output  traffic flow data for per ID of per day(folder collection)
  *
  */
 
-public class a_DataGetter {
+public class A_DataGetter {
 	
 	public static String resultBase = "result/";
 	public static int defaultInterval = 60 * 5;//default time  interval(5min)
@@ -145,13 +145,13 @@ public class a_DataGetter {
 			if(dataFile.isFile() && dataFileName.contains(".txt")){
 				System.out.println("getting data from raw datfile:" + dataFileName);
 								
-				Map<String,int[][]> map = a_DataGetter.getTimeFlow(ids,interval, folder+"/"+ dataFileName,null);
+				Map<String,int[][]> map = A_DataGetter.getTimeFlow(ids,interval, folder+"/"+ dataFileName,null);
 				
 				if (map.size() == 1 && map.get("00") != null) {
-					a_DataGetter.saveResult(resultBase+"/collection/"+dataFile.getName(), map.get("00"), interval);
+					A_DataGetter.saveResult(resultBase+"/collection/"+dataFile.getName(), map.get("00"), interval);
 				}else {
 					for (String id : map.keySet()){
-						a_DataGetter.saveResult(resultBase+"/collection/" + id + "_" + dataFileName, map.get(id), interval);
+						A_DataGetter.saveResult(resultBase+"/collection/" + id + "_" + dataFileName, map.get(id), interval);
 					}
 				}
 											
@@ -169,7 +169,7 @@ public class a_DataGetter {
 				
 				int inter = 300;
 								
-				Map<String,int[][]> map = a_DataGetter.getTimeFlow(null,inter, folder+"/"+file.getName(),"1");
+				Map<String,int[][]> map = A_DataGetter.getTimeFlow(null,inter, folder+"/"+file.getName(),"1");
 				System.out.println(file.getName()+" ## "+ map.get("00"));
 											
 			}
@@ -244,7 +244,7 @@ public class a_DataGetter {
 		Map<String, Integer>  idMax = new HashMap<String, Integer>();
 		for(String id : ids){
 			
-			String max = a_DataGetter.maxFlowFromFile(folderpath+"/"+id+"_2015-"+month+"-"+day+".txt");
+			String max = A_DataGetter.maxFlowFromFile(folderpath+"/"+id+"_2015-"+month+"-"+day+".txt");
 			System.out.println("id:"+ id+"//max:"+max);
 			if (max != null) {
 				idMax.put(id, Integer.parseInt(max.trim()));
@@ -293,7 +293,7 @@ public class a_DataGetter {
 		List<String> ids = null;
 		//ids = DataGetter.getIds("data/ids.txt");
 		
-		a_DataGetter.getTimeFlow("data/rawData/vpr-June",ids,defaultInterval);
+		A_DataGetter.getTimeFlow("data/rawData/vpr-June",ids,defaultInterval);
 		
 	}
 
