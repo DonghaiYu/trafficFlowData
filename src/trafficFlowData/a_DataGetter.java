@@ -28,7 +28,7 @@ import java.util.Set;
  *
  */
 
-public class DataGetter {
+public class a_DataGetter {
 	
 	public static String resultBase = "result/";
 	public static int defaultInterval = 60 * 5;//default time  interval(5min)
@@ -145,13 +145,13 @@ public class DataGetter {
 			if(dataFile.isFile() && dataFileName.contains(".txt")){
 				System.out.println("getting data from raw datfile:" + dataFileName);
 								
-				Map<String,int[][]> map = DataGetter.getTimeFlow(ids,interval, folder+"/"+ dataFileName,null);
+				Map<String,int[][]> map = a_DataGetter.getTimeFlow(ids,interval, folder+"/"+ dataFileName,null);
 				
 				if (map.size() == 1 && map.get("00") != null) {
-					DataGetter.saveResult(resultBase+"/collection/"+dataFile.getName(), map.get("00"), interval);
+					a_DataGetter.saveResult(resultBase+"/collection/"+dataFile.getName(), map.get("00"), interval);
 				}else {
 					for (String id : map.keySet()){
-						DataGetter.saveResult(resultBase+"/collection/" + id + "_" + dataFileName, map.get(id), interval);
+						a_DataGetter.saveResult(resultBase+"/collection/" + id + "_" + dataFileName, map.get(id), interval);
 					}
 				}
 											
@@ -169,7 +169,7 @@ public class DataGetter {
 				
 				int inter = 300;
 								
-				Map<String,int[][]> map = DataGetter.getTimeFlow(null,inter, folder+"/"+file.getName(),"1");
+				Map<String,int[][]> map = a_DataGetter.getTimeFlow(null,inter, folder+"/"+file.getName(),"1");
 				System.out.println(file.getName()+" ## "+ map.get("00"));
 											
 			}
@@ -244,7 +244,7 @@ public class DataGetter {
 		Map<String, Integer>  idMax = new HashMap<String, Integer>();
 		for(String id : ids){
 			
-			String max = DataGetter.maxFlowFromFile(folderpath+"/"+id+"_2015-"+month+"-"+day+".txt");
+			String max = a_DataGetter.maxFlowFromFile(folderpath+"/"+id+"_2015-"+month+"-"+day+".txt");
 			System.out.println("id:"+ id+"//max:"+max);
 			if (max != null) {
 				idMax.put(id, Integer.parseInt(max.trim()));
@@ -293,7 +293,7 @@ public class DataGetter {
 		List<String> ids = null;
 		//ids = DataGetter.getIds("data/ids.txt");
 		
-		DataGetter.getTimeFlow("data/rawData/vpr-June",ids,defaultInterval);
+		a_DataGetter.getTimeFlow("data/rawData/vpr-June",ids,defaultInterval);
 		
 	}
 
