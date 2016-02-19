@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Scanner;
 
-public class AvgSigResult {
+public class Z_AvgSigResult {
 	
 	public static class Err {
 		private double mae;

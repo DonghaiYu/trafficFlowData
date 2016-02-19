@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-public class MaxGetter {
+public class Z_MaxGetter {
 
 	public static void main(String[] args) throws FileNotFoundException {
 		File folder = new File("data/vpr-June/collection/individual");
