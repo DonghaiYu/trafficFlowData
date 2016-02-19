@@ -10,22 +10,33 @@ import java.util.Scanner;
 
 /**
  * 
- * @author donghaiyu
- * @description Step  ,
+ * @author DonghaiYu
+ * @description traffic Flow prediction Experiment Step 2
+ * @input traffic flow data for per ID and per day(folder collection)
+ * @output  traffic flow data for per ID and all day(folder byids)
  *
  */
-public class Collection {
+public class b_Collection {
+	
+	public static String inputPath = "result/collection";
+	public static String savePath = "result/byids/";
 
-	public static void main(String[] args) throws IOException {
-		String path = "data/vpr-June/collection/individual/";
-		//System.out.println("32_02_2015-06-01".split("_2015")[0]);
-		File folder = new File(path);
+	public static void main(String[] args) {
+		
+		File folder = new File(inputPath);
 		File[] files = folder.listFiles();
 		Map<String, String> collMap = new HashMap<String, String>();
+		
 		for (int i = 0; i < files.length; i++) {
 			String id = files[i].getName().split("_2015-")[0];
 			String day = files[i].getName().split("_2015-")[1].replaceAll(".txt", ""); 
-			Scanner sc = new Scanner(files[i]);
+			Scanner sc = null;
+			try {
+				sc = new Scanner(files[i]);
+			} catch (FileNotFoundException e) {
+				System.out.println("can't scan file:" + files[i].getName());
+				System.exit(1);
+			}
 			StringBuilder strb = new StringBuilder();
 			int num = 0;
 			while (sc.hasNext()) {
@@ -36,30 +47,31 @@ public class Collection {
 				}else {
 					strb.append(",");
 					strb.append(temp.split(",")[1]);
-				}
-				
+				}				
 				num++;
 			}
 			strb.append("\n");
 			sc.close();
 			if (collMap.containsKey(id)) {
 				String old = collMap.get(id);
-				strb.insert(0, old);
-				
-			}
-			//System.out.println(strb.toString());
-			
+				strb.insert(0, old);				
+			}		
 			collMap.put(id, strb.toString());
 		}
-		//System.out.println(collMap.get("301_03"));
-		String savePath = "data/vpr-June/collection/byids/";
+
+		
 		for (String id : collMap.keySet()) {
 			File f = new File(savePath+id);
-			FileWriter fw = new FileWriter(f);
-			fw.write(collMap.get(id));
-			fw.flush();
-			fw.close();
-			
+			FileWriter fw;
+			try {
+				fw = new FileWriter(f);
+				fw.write(collMap.get(id));
+				fw.flush();
+				fw.close();
+			} catch (IOException e) {
+				System.out.println("can't write file!");
+			}
+						
 		}
 	}
 
