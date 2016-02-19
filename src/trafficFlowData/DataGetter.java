@@ -22,11 +22,12 @@ import java.util.Set;
  * 
  * @author donghaiyu
  * @description Step 1
- * @input row data for cars' pass record
+ * @input raw data of cars' pass records
+ * @output 
  *
  */
 public class DataGetter {
-	
+	 
 	
 	
 	/**
