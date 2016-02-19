@@ -9,10 +9,18 @@ path <- "E://javacode/trafficFlowData/result/byids/"
 folder <- dir(path)
 
 stp = 1
-xx = 0
-del = 0
+UsefulIDNum = 0
+deletIDNum = 0
 ch = 0
-delday = 0
+
+minDays = 4
+#有数据的天数小于minDays时认为卡口数据缺失严重，此卡口数据不使用
+zeroThreshold = 8
+#白天流量为0的时间段超过 zeroThreshold 次就认为数据缺失严重，这一天的数据不使用
+daytimeStart = 80
+#24小时中开始使用数据的位置
+daytimeEnd = 240
+#24小时中结束使用数据的位置
 
 #遍历每一个卡口数据文件
 for (idNum in 1:length(folder)){
@@ -25,16 +33,16 @@ for (idNum in 1:length(folder)){
 	mat = mat[,-1]
 	
 	if(is.null(nrow(mat))){
-		del = del + 1
+		deletIDNum = deletIDNum + 1
 		next
 	}
 	
-	if( nrow(mat) < 5 ){
+	if( nrow(mat) < minDays ){
 		#每月数据量小于5天的卡口删除
-		del = del + 1
+		deletIDNum = deletIDNum + 1
 		next
 	}
-	xx = xx + 1
+	UsefulIDNum = UsefulIDNum + 1
 	
 	# stp表示将几个相邻数据相加，即处理后的数据是几个5分钟的流量
 	ma = matrix(as.numeric(mat),nrow=nrow(mat))
@@ -50,34 +58,25 @@ for (idNum in 1:length(folder)){
 	
 	allDaysData = m
 	noisDays = c()
-	zeroThreshold = 8
-	#白天流量为0的时间段超过 zeroThreshold 次就认为数据缺失严重，这一天的数据不使用
+	
 	for( i in 1:nrow(m)){
-		num = length(which(m[i,80:240] == 0))
+		num = length(which(m[i,daytimeStart:daytimeEnd] == 0))
 		if(num > zeroThreshold){
-			#print(paste("id",id,"day",i,sep=" "))
 			noisDays = c(noisDays,i)
-			delday = delday + 1 
 		}
 	}
 	normalDaysData = m[-noisDays,]
-	#normalColMeans = colMeans(normalDaysData)
-	
 	noisDaysData = m[noisDays,]
 	
 	#当噪音天数少于1/3时，删除噪音天的数据
 	normN = nrow(m) - length(noisDays)
-	noisN = 2*length(noisDays)
-	print(paste("id",id,"normN",normN,"noisN",noisN,sep=";"))
-	if(length(noisDays) > 0 && length(noisDays) < nrow(m)){
-		if(normN > noisN){
-			print("delete noise")
-			m = normalDaysData
-			dateCol = dateCol[-noisDays]
-		}
-		
+	noisN = length(noisDays)
+	maxNoise = nrow(m)/3
+	#print(paste("id",id,"normN",normN,"noisN",noisN,sep=";"))
+	if(noisN > 0 && noisN <= maxNoise){
+		m = normalDaysData
+		dateCol = dateCol[-noisDays]		
 	}
-	
 	
 	y = nrow(m)#天数
 	x = ncol(m)#每天统计数据个数
@@ -90,6 +89,8 @@ for (idNum in 1:length(folder)){
 	
 	for(j in 1 : x ){
 		oneInter = m[,j]
+		
+		#七分位数
 		sevenSP = sort(oneInter)[floor(y*0.7)]
 		for( k in 1 : y){
 			if(m[k,j] > (3*sevenSP) && m[k,j] > 100){
@@ -100,12 +101,12 @@ for (idNum in 1:length(folder)){
 				}
 				
 				m[k,j] = floor(chv)
-				#print(paste("change outliers ",ch," id ",id," day: ",k," interval: ",j,msep=""))
+				print(paste("change outliers ",ch," id ",id," day: ",k," interval: ",j,msep=""))
 			}
 		}
 	}
-
 	
+	m = scale(m,center=TRUE,scale=TRUE)
 
 	co = ncol(m)/stp+1
 	tosave = matrix(nrow=nrow(m),ncol=co)
@@ -113,8 +114,7 @@ for (idNum in 1:length(folder)){
 	for( i in 2 : co){
 		tosave[,i] = m[,i-1]
 	}
-	write.table(tosave, file = paste("F://datac/",id,sep=""),sep=",", row.names = FALSE,col.names = FALSE,quote = FALSE)
+	write.table(tosave, file = paste("E://javacode/trafficFlowData/result/cleaned_byids/",id,sep=""),sep=",", row.names = FALSE,col.names = FALSE,quote = FALSE)
 	
 }
-#print(delday)
-#print(table(en))
+

@@ -15,20 +15,15 @@ import java.util.Set;
 
 /**
  * 
- * @description 将一天的数据重组为t个时段一组
- *
- */
-/**
- * 
  * @author DonghaiYu
- * @description traffic Flow prediction Experiment Step 
- * @input traffic flow data for per ID and per day(folder collection)
- * @output  traffic flow data for per ID and all day(folder byids)
+ * @description traffic Flow prediction Experiment Data preparation Part Step 4(use for jar file)
+ * @input cleaned traffic flow data for per ID of all day(folder cleaned_byids)
+ * @output  ANN input data group by IDs(execute before every ANN training)
  *
  */
 
 
-public class Spliter {
+public class D_Spliter {
 	
 	public static String USAGE = "java -jar spliter.jar [filePath] [saveFolder] [days] [ids] [targetLength] [cutStartIndex] [cutEndIndex] [totalVectorLength]";
 	
