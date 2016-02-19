@@ -18,94 +18,94 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+
 /**
  * 
- * @author donghaiyu
- * @description Step 1
- * @input raw data of cars' pass records
- * @output 
+ * @author DonghaiYu
+ * @description traffic Flow prediction Experiment Step 1
+ * @input raw data of cars' pass records(folder rawData)
+ * @output  traffic flow data for per ID and per day(folder collection)
  *
  */
+
 public class DataGetter {
-	 
 	
+	public static String resultBase = "result/";
+	public static int defaultInterval = 60 * 5;//default time  interval(5min)
 	
 	/**
-	 * @return  Map<String, int[][]>(id,��������inte���ͳ����)
-	 * @param inte ͳ��������ʱ����������Ϊ��λ��
-	 * @param datafile ��ȡ��Դ�����ļ�·����
-	 * @param ids   ����id�б�
+	 * @return  Map<String, int[][]>(id,traffic flow per interval)
+	 * @param interValue  time interval for the traffic flow
+	 * @param datafile  raw data's filename
+	 * @param ids   detector IDs to statistic traffic flow
 	 */
 	@SuppressWarnings("deprecation")
-	public static Map<String, int[][]> getTimeFlow(List<String> ids,int inte,String datafile,String plateType){
+	public static Map<String, int[][]> getTimeFlow(List<String> ids,int interValue,String datafile,String plateType){
 		
 		FileReader fr = null;
 		try {
 			fr = new FileReader(datafile);
 		} catch (FileNotFoundException e) {
-			System.out.println("�Ҳ�������Դ�ļ�"+datafile);
+			System.out.println("can't find raw datafile:"+datafile);
 			System.exit(1);
 		}
 		
 		Scanner sc = new Scanner(fr);
 		String content = null;
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		int interval = inte;
+		int interval = interValue;
 		
 		if(interval <= 0 || interval >= (12 * 60 * 60)){
-			interval = 60 * 5;//Ĭ��ʱ����
+			interval = 60 * 5;//default 5 minutes
 		}
 		int timeinter = 60 * 60 / interval;
 		int num[][] = new int[24][timeinter];
 		
 		Map<String, int[][]> map = new HashMap<String, int[][]>();
-		Set<String> idnum = new HashSet<String>(ids);
-		/*if(ids != null){
-			for(String id : ids){
-				map.put(id, new int[24][timeinter]);
-			}
-		}*/
+		Set<String> idnum = null;
+		if (ids != null) {
+			idnum = new HashSet<String>(ids); 
+		}
 		
+			
 		while(sc.hasNext()){
 			content = sc.nextLine();
 			String[] spl = content.split(",");
 			try {
 				Date date = formatter.parse(spl[5]);
 				String idString = spl[2].trim();
-				String plateTypeString = spl[1].trim();
+				//String plateTypeString = spl[1].trim();
 				String orientation = spl[3].trim();
-				//System.out.println(idString);
+
 				int hour = date.getHours();
 				int minu = date.getMinutes();
 				int sec = date.getSeconds();
 				
 				String idKey = idString + "_" + orientation;
 				
-				if(ids != null ){
-					
-					//if(idnum.contains(idString)){
-						int[][] tempnum = map.get(idKey);
-						if (tempnum == null) {
-							map.put(idKey, new int[24][timeinter]);
-						}else {
-							tempnum[hour][(minu * 60 + sec) / interval]++;
-							map.put(idKey, tempnum);
-						}						
-					//}
-					
-				}else{				
-					num[hour][(minu * 60 + sec) / interval]++;										
+				if(ids == null || ids != null && idnum != null && idnum.contains(idString) ){
+					int[][] tempnum = map.get(idKey);
+					if (tempnum == null) {
+						int[][] tf = new int[24][timeinter];
+						tf[hour][(minu * 60 + sec) / interval]++;
+						map.put(idKey, tf);
+					}else {
+						tempnum[hour][(minu * 60 + sec) / interval]++;
+						map.put(idKey, tempnum);
+					}				
 				}
 				
 			} catch (ParseException e) {
-				System.out.println("�޷���ȡʱ�䣡from��" + content);
+				System.out.println("date format error:" + content);
 			}
+		}		
+		sc.close();
+		try {
+			fr.close();
+		} catch (IOException e) {
+			System.out.println("file close error!");
 		}
 		
-		sc.close();
-		if(ids == null){
-			map.put("00", num);
-		}
 		return map;
 		
 	}
@@ -116,16 +116,14 @@ public class DataGetter {
 		try {
 			fw = new FileWriter(f);
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			System.out.println("can't write file:" + f.getName());
 		}
 		for(int i=0;i<24;i++){
 			for(int j=0;j<(60 * 60 /inter);j++){
 				try {
-					//System.out.println(i+":"+j+","+num[i][j]);
 					fw.write(String.format("%02d", i)+":"+ String.format("%02d", (j * inter / 60)) +","+num[i][j]+"\n");
 				} catch (IOException e) {
-					System.out.println("�ļ�д�����file:" + savef);
+					System.out.println("write file error:" + savef);
 				}
 			}
 		}
@@ -133,26 +131,27 @@ public class DataGetter {
 			fw.flush();
 			fw.close();
 		} catch (IOException e) {
+			System.out.println("write file error:" + f.getName());
 			System.exit(1);
 		}
 	}
 	
-	public static void getTimeFlow(String folder,List<String> ids){
+	public static void getTimeFlow(String folder,List<String> ids,int interval){
 		
 		File foldFile = new File(folder);	
-		File[] datas = foldFile.listFiles();
-		for(File file : datas){
-			if(file.isFile() && file.getName().contains(".txt")){
-				
-				int inter = 300;//时间间隔，单位为秒
+		File[] dataFiles = foldFile.listFiles();
+		for(File dataFile : dataFiles){
+			String dataFileName = dataFile.getName();
+			if(dataFile.isFile() && dataFileName.contains(".txt")){
+				System.out.println("getting data from raw datfile:" + dataFileName);
 								
-				Map<String,int[][]> map = DataGetter.getTimeFlow(ids,inter, folder+"/"+file.getName(),null);
-				System.out.println("get finished,to save");
+				Map<String,int[][]> map = DataGetter.getTimeFlow(ids,interval, folder+"/"+ dataFileName,null);
+				
 				if (map.size() == 1 && map.get("00") != null) {
-					DataGetter.saveResult(folder+"/collection/"+file.getName(), map.get("00"), inter);
+					DataGetter.saveResult(resultBase+"/collection/"+dataFile.getName(), map.get("00"), interval);
 				}else {
 					for (String id : map.keySet()){
-						DataGetter.saveResult(folder+"/collection/individual/" + id + "_" + file.getName(), map.get(id), inter);
+						DataGetter.saveResult(resultBase+"/collection/" + id + "_" + dataFileName, map.get(id), interval);
 					}
 				}
 											
@@ -291,30 +290,11 @@ public class DataGetter {
 
 	public static void main(String[] args) throws IOException {
 		
-		//DataGetter.getTimeFlow(60, "data/vpr-June/2015-06-20.txt","D:/data/vpr-June/timeflow0620.txt");
-		List<String> ids = DataGetter.getIds("data/ids.txt");
+		List<String> ids = null;
+		//ids = DataGetter.getIds("data/ids.txt");
 		
-		DataGetter.getTimeFlow("data/vpr-June",ids);
-		/*ids.clear();
-		String[] temp ={"301_03","39_02","473_01","478_01","482_00","482_03","492_03"};
-		for (int i = 0; i < temp.length; i++) {
-			ids.add(temp[i]);
-		}*/
+		DataGetter.getTimeFlow("data/rawData/vpr-June",ids,defaultInterval);
 		
-		/*int max = 0;
-		for (int d = 1;d < 9;d++) {
-			Map<String, Integer>  idMax = DataGetter.maxFlowOneDay(ids, "data/vpr-June/collection/individual", "06", String.format("%02d", d));
-			
-			for (int num : idMax.values()) {
-				if (num > max) {
-					max = num;
-				}
-			}
-			
-		}
-		System.out.println(max);*/
-		
-		//DataGetter.getSum("data/vpr-June");
 	}
 
 }
