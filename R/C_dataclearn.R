@@ -105,8 +105,8 @@ for (idNum in 1:length(folder)){
 			}
 		}
 	}
-	
-	m = scale(m,center=TRUE,scale=TRUE)
+	#normalization or not
+	#m = scale(m,center=TRUE,scale=TRUE)
 
 	co = ncol(m)/stp+1
 	tosave = matrix(nrow=nrow(m),ncol=co)
