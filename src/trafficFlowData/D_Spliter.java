@@ -5,18 +5,15 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 
 /**
  * 
  * @author DonghaiYu
- * @description traffic Flow prediction Experiment Data preparation Part Step 4(use for jar file)
+ * @description traffic Flow prediction Experiment Data preparation Part Step 4(use for jar file on server machine during training)
  * @input cleaned traffic flow data for per ID of all day(folder cleaned_byids)
  * @output  ANN input data group by IDs(execute before every ANN training)
  *

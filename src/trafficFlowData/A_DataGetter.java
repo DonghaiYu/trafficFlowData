@@ -59,7 +59,6 @@ public class A_DataGetter {
 			interval = 60 * 5;//default 5 minutes
 		}
 		int timeinter = 60 * 60 / interval;
-		int num[][] = new int[24][timeinter];
 		
 		Map<String, int[][]> map = new HashMap<String, int[][]>();
 		Set<String> idnum = null;
@@ -187,6 +186,7 @@ public class A_DataGetter {
 				lnr.skip(file.length());
 				int lnum = lnr.getLineNumber();
 				System.out.print(lnum+",");
+				lnr.close();
 			}
 		}
 		
@@ -212,7 +212,7 @@ public class A_DataGetter {
 		}
 		list = new ArrayList<String>(idSet);
 		System.out.println("totally "+list.size()+" ids");
-		
+		sc.close();
 		return list;
 	}
 	
@@ -236,7 +236,7 @@ public class A_DataGetter {
 		}
 		list = new ArrayList<String>(idSet);
 		System.out.println("totally "+list.size()+" ids");
-		
+		sc.close();
 		return list;
 	}
 	
@@ -258,7 +258,6 @@ public class A_DataGetter {
 	
 	public static String maxFlowFromFile(String  path){
 		int max = 0;
-		String t = null;
 		FileReader fr = null;
 		try {
 			fr = new FileReader(path);
@@ -274,7 +273,6 @@ public class A_DataGetter {
 			
 			if(i > max){
 				max = i;
-				t = temp[0];
 			}
 		}
 		sc.close();
