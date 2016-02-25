@@ -58,17 +58,17 @@ public class D_Spliter {
 		
 		//delete the IDs that don't have data file
 		String[] allIds = group.split(",");
-		Set<String> ids = findFiles(allIds, filePath);
+		List<String> ids = findFiles(allIds, filePath);
 		
 		Map<String, String[]> idGroups = new HashMap<String, String[]>();
 		
-		for (String id : ids) {
+		/*for (String id : ids) {
 			String[] bayId = {id};
 			idGroups.put(saveBase+id,bayId);
-		}
-		String[] idsArr = new String[ids.size()];
-		ids.toArray(idsArr);
-		idGroups.put(saveBase+"group", idsArr);		
+		}*/
+		String[] idsarr = new String[ids.size()];
+		ids.toArray(idsarr);
+		idGroups.put(saveBase+"group", idsarr);		
 		
 		for (String saveName : idGroups.keySet()) {
 			
@@ -124,7 +124,7 @@ public class D_Spliter {
 		}	
 	}
 	
-	public static Set<String> findFiles(String[] ids,String folder) {
+	public static List<String> findFiles(String[] ids,String folder) {
 		File f = new File(folder);
 		File[] fs = f.listFiles();
 		Set<String> allids = new HashSet<String>();
@@ -132,11 +132,15 @@ public class D_Spliter {
 			allids.add(fs[i].getName());
 		}
 
-		Set<String> getids = new HashSet<String>();
+		List<String> getids = new ArrayList<String>();
 		for (int i = 0; i < ids.length; i++) {
+			if(i == 0 && !allids.contains(ids[i])){
+				return null;
+			}
 			if (allids.contains(ids[i])) {
 				getids.add(ids[i]);
 			}
+			
 		}
 		return getids;
 		
@@ -266,9 +270,10 @@ public class D_Spliter {
 					}
 					
 				}
-				for (int j = 0; j < num; j++) {
+				/*for (int j = 0; j < num; j++) {
 					fw.write(","+oneDayAllBays.get(j)[i2][x-1]);
-				}
+				}*/
+				fw.write(","+oneDayAllBays.get(0)[i2][x-1]);
 				fw.write("\n");
 			}
 		}
