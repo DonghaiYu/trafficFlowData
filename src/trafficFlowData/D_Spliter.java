@@ -32,7 +32,7 @@ public class D_Spliter {
 		String  filePath = "result/cleaned_byids/";
 		String saveBase = "result/ANNinput/";
 		String allday = "06-01,06-02,06-04,06-10,06-15,06-16,06-17,06-18,06-22,06-24,06-25,06-26,06-29,06-30";
-		String group = "1_00,371302989030_03,371302981075_01,2_01";
+		String group = "371300403101_01,371300403101_03,371300403102_00";
 		int outN = 1;
 		int startIndex = 12 * 5;//12代表一个小时
 		int endIndex = 12 * 3;
@@ -60,6 +60,13 @@ public class D_Spliter {
 		String[] allIds = group.split(",");
 		List<String> ids = findFiles(allIds, filePath);
 		
+		if (ids == null || ids.size()<3) {
+			return;
+		}
+		while (ids.size() > 3) { //小于三个卡口的分组删除
+			ids.remove(3);
+		}
+		
 		Map<String, String[]> idGroups = new HashMap<String, String[]>();
 		
 		/*for (String id : ids) {
@@ -68,8 +75,18 @@ public class D_Spliter {
 		}*/
 		String[] idsarr = new String[ids.size()];
 		ids.toArray(idsarr);
-		idGroups.put(saveBase+"group", idsarr);		
+		String name = "";
+		for (int i = 0; i < 3; i++) {
+			if (i == 0) {
+				name = idsarr[i];
+			}else {
+				name = name +"-"+ idsarr[i];
+			}
+			
+		}
 		
+		idGroups.put(saveBase+"g"+name, idsarr);		
+		System.out.println(saveBase);
 		for (String saveName : idGroups.keySet()) {
 			
 			String savePath = saveName;
@@ -78,7 +95,7 @@ public class D_Spliter {
 			List<Map<String, int[]>> allDayAllBays = new ArrayList<Map<String,int[]>>();
 			//<date,vector>for one bay
 			
-			for (int i = 0; i < forids.length; i++) {
+			for (int i = 0; i < 3; i++) { //3表示取三个卡口为一组
 				Map<String, int[]> dayMap = null;
 				try {
 					dayMap = getVec(filePath+forids[i]);
@@ -90,28 +107,33 @@ public class D_Spliter {
 			}
 			
 			List<List<int [][]>> toSave = new ArrayList<List<int[][]>>();
-			List<Integer> saveDays = new ArrayList<Integer>();
-			for (int i = 1; i < 31; i++) {				
-
-				String day = String.format("06-%02d",i );
-				if (days.contains(day)) {
-					List<int[][]> oneDayAllBays = new ArrayList<int[][]>();
-					for (Map<String, int[]> oneBayAlldays: allDayAllBays) {
-						if (oneBayAlldays.containsKey(day)) {
-							int[][] oneDayOneBay = cutVec(oneBayAlldays.get(day), startIndex, endIndex,intervalNum,outN);
-							oneDayAllBays.add(oneDayOneBay);
-						}else {
-							oneDayAllBays.clear();
-							System.out.println(saveName + " lack the vector of date:" + day);
-							break;
-						}
-						
+			List<String> saveDays = new ArrayList<String>();
+			List<Set<String>> d = new ArrayList<Set<String>>();
+			for (Map<String, int[]> oneBayAlldays: allDayAllBays) {
+				Set<String> x = oneBayAlldays.keySet();
+				d.add(x);
+			}
+			for (int i = 1; i < d.size(); i++) {
+				d.get(0).retainAll(d.get(i));
+			}
+			
+			for (String day : d.get(0)) {
+				List<int[][]> oneDayAllBays = new ArrayList<int[][]>();
+				for (Map<String, int[]> oneBayAlldays: allDayAllBays) {
+					if (oneBayAlldays.containsKey(day)) {
+						int[][] oneDayOneBay = cutVec(oneBayAlldays.get(day), startIndex, endIndex,intervalNum,outN);
+						oneDayAllBays.add(oneDayOneBay);
+					}else {
+						oneDayAllBays.clear();
+						System.out.println(saveName + " lack the vector of date:" + day);
+						break;
 					}
-					if (oneDayAllBays.size() != 0) {
-						saveDays.add(i);
-						toSave.add(oneDayAllBays);
-					}	
-				}				
+					
+				}
+				if (oneDayAllBays.size() != 0) {
+					saveDays.add(day);
+					toSave.add(oneDayAllBays);
+				}
 			}
 			System.out.println("for group:"+Arrays.toString(forids)+":days:"+ saveDays.toString());
 
@@ -142,6 +164,7 @@ public class D_Spliter {
 			}
 			
 		}
+		
 		return getids;
 		
 	}

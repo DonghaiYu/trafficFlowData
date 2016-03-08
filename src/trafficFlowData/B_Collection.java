@@ -28,8 +28,19 @@ public class B_Collection {
 		Map<String, String> collMap = new HashMap<String, String>();
 		
 		for (int i = 0; i < files.length; i++) {
-			String id = files[i].getName().split("_2015-")[0];
-			String day = files[i].getName().split("_2015-")[1].replaceAll(".txt", ""); 
+			String fName = files[i].getName();
+			String[] id_day = null;
+			String year = null;
+			if (fName.contains("_2015-")) {
+				id_day = fName.split("_2015-");
+				year = "2015-";
+			}else if (fName.contains("_2016-")) {
+				id_day = fName.split("_2016-");
+				year = "2016-";
+			}
+			String id = id_day[0];
+			String date = year+id_day[1].replaceAll(".txt", ""); 
+			
 			Scanner sc = null;
 			try {
 				sc = new Scanner(files[i]);
@@ -42,7 +53,7 @@ public class B_Collection {
 			while (sc.hasNext()) {
 				String temp = (String) sc.next();
 				if (num == 0) {
-					strb.append(day+",");
+					strb.append(date+",");
 					strb.append(temp.split(",")[1]);
 				}else {
 					strb.append(",");

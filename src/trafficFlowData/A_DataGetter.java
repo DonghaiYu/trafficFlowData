@@ -291,7 +291,7 @@ public class A_DataGetter {
 		List<String> ids = null;
 		//ids = DataGetter.getIds("data/ids.txt");
 		
-		A_DataGetter.getTimeFlow("data/rawData/vpr-June",ids,defaultInterval);
+		A_DataGetter.getTimeFlow("F:/C",ids,defaultInterval);
 		
 	}
 
