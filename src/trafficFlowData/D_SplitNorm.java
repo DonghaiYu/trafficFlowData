@@ -22,7 +22,9 @@ import java.util.Set;
  *
  */
 
-public class D_Spliter {
+
+public class D_SplitNorm {
+	
 	public static String USAGE = "java -jar spliter.jar [filePath] [saveFolder] [days] [ids] [targetLength] [cutStartIndex] [cutEndIndex] [totalVectorLength]";
 	
 	public static void main(String[] args) {		
@@ -90,11 +92,11 @@ public class D_Spliter {
 			String savePath = saveName;
 			String[] forids = idGroups.get(saveName);			
 			
-			List<Map<String, int[]>> allDayAllBays = new ArrayList<Map<String,int[]>>();
+			List<Map<String, double[]>> allDayAllBays = new ArrayList<Map<String,double[]>>();
 			//<date,vector>for one bay
 			
 			for (int i = 0; i < 3; i++) { //3表示取三个卡口为一组
-				Map<String, int[]> dayMap = null;
+				Map<String, double[]> dayMap = null;
 				try {
 					dayMap = getVec(filePath+forids[i]);
 					allDayAllBays.add(dayMap);
@@ -104,10 +106,10 @@ public class D_Spliter {
 				
 			}
 			
-			List<List<int [][]>> toSave = new ArrayList<List<int[][]>>();
+			List<List<double [][]>> toSave = new ArrayList<List<double[][]>>();
 			List<String> saveDays = new ArrayList<String>();
 			List<Set<String>> d = new ArrayList<Set<String>>();
-			for (Map<String, int[]> oneBayAlldays: allDayAllBays) {
+			for (Map<String, double[]> oneBayAlldays: allDayAllBays) {
 				Set<String> x = oneBayAlldays.keySet();
 				d.add(x);
 			}
@@ -116,10 +118,10 @@ public class D_Spliter {
 			}
 			
 			for (String day : d.get(0)) {
-				List<int[][]> oneDayAllBays = new ArrayList<int[][]>();
-				for (Map<String, int[]> oneBayAlldays: allDayAllBays) {
+				List<double[][]> oneDayAllBays = new ArrayList<double[][]>();
+				for (Map<String, double[]> oneBayAlldays: allDayAllBays) {
 					if (oneBayAlldays.containsKey(day)) {
-						int[][] oneDayOneBay = cutVec(oneBayAlldays.get(day), startIndex, endIndex,intervalNum,outN);
+						double[][] oneDayOneBay = cutVec(oneBayAlldays.get(day), startIndex, endIndex,intervalNum,outN);
 						oneDayAllBays.add(oneDayOneBay);
 					}else {
 						oneDayAllBays.clear();
@@ -166,19 +168,20 @@ public class D_Spliter {
 		return getids;
 		
 	}
-	public static Map<String, int[]> getVec(String filename) throws FileNotFoundException{
+	public static Map<String, double[]> getVec(String filename) throws FileNotFoundException{
 		File file = new File(filename);
 		Scanner sc = new Scanner(file);
 		
-		Map<String, int[]> dayDataMap = new HashMap<String, int[]>();
+		Map<String, double[]> dayDataMap = new HashMap<String, double[]>();
 		
 		while (sc.hasNext()) {
 			String temp = sc.nextLine();
 			String[] splits = temp.split(",");
 			String id = splits[0];
-			int[] lineNum = new  int[splits.length-1];
+			double[] lineNum = new  double[splits.length-1];
 			for (int i = 1; i < splits.length; i++) {
-				lineNum[i-1] = Integer.parseInt(splits[i]);
+				//lineNum[i-1] = Integer.parseInt(splits[i]);
+				lineNum[i-1] = Double.parseDouble(splits[i]);
 			}
 			dayDataMap.put(id, lineNum);
 		}
@@ -217,11 +220,11 @@ public class D_Spliter {
 		return matrix;
 	}
 	
-	public static int[][] cutVec(int[] vector,int start,int end,int interNum,int outN) {
+	public static double[][] cutVec(double[] vector,int start,int end,int interNum,int outN) {
 		int length = vector.length;
 		int vecNum = length - start - interNum -end + 2;
 		int inputN = interNum - outN; 
-		int[][] beans = new int[vecNum][inputN+1];
+		double[][] beans = new double[vecNum][inputN+1];
 		for (int i = 0; i < vecNum; i++) {
 			for (int j = 0; j < inputN; j++) {
 				beans[i][j] = vector[i+start+j-1];
@@ -269,13 +272,13 @@ public class D_Spliter {
 		fw.close();
 	}
 
-	public static void saveGroup(String fileName,List<List<int [][]>> toSave) throws IOException {
+	public static void saveGroup(String fileName,List<List<double [][]>> toSave) throws IOException {
 		File saveFile = new File(fileName);
 		FileWriter fw = new FileWriter(saveFile);
 		
 		//System.out.println("days:"+toSave.size());
 		for (int i = 0; i < toSave.size(); i++) {
-			List<int[][]> oneDayAllBays = toSave.get(i);
+			List<double[][]> oneDayAllBays = toSave.get(i);
 			int num = oneDayAllBays.size();
 			int x = oneDayAllBays.get(0)[0].length;
 			int y = oneDayAllBays.get(0).length;
@@ -305,4 +308,5 @@ public class D_Spliter {
 	
 	
 	
+
 }
