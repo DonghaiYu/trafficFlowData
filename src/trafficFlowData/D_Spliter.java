@@ -22,24 +22,27 @@ import java.util.Set;
  *
  */
 
+
 public class D_Spliter {
-	public static String USAGE = "java -jar spliter.jar [filePath] [saveFolder] [days] [ids] [targetLength] [cutStartIndex] [cutEndIndex] [totalVectorLength]";
+	public static String USAGE = "java -jar spliter.jar [filePath] [saveFolder] [ids] [targetLength] [cutStartIndex] [cutEndIndex] [totalVectorLength]";
+	
+	
+
 	
 	public static void main(String[] args) {		
 		
-		String  filePath = "result/cleaned_byids/";
+		String  filePath = "result/byids/";
 		String saveBase = "result/ANNinput/";
-		String allday = "06-01,06-02,06-04,06-10,06-15,06-16,06-17,06-18,06-22,06-24,06-25,06-26,06-29,06-30";
 		String group = "371300403101_01,371300403101_03,371300403102_00";
 		int outN = 1;
-		int startIndex = 12 * 5;//12代表一个小时
-		int endIndex = 12 * 3;
+		int startIndex = 1;
+		//4 * 60 / 12;
+		int endIndex = 3 * 60 / 12;
 		int intervalNum = 20;		
 		
-		if (args.length > 7) {
+		/*if (args.length > 6) {
 			filePath = args[0];
 			saveBase = args[1];
-			allday = args[2];
 			group = args[3];
 			outN = Integer.parseInt(args[4]);
 			startIndex = Integer.parseInt(args[5]);
@@ -49,28 +52,169 @@ public class D_Spliter {
 			System.out.println("parameters not enough");
 			System.out.println(USAGE);
 			return;
+		}*/
+		
+		Map<String, String[]> idGroups = getIdGroup(group, filePath, saveBase);
+		//<saveName,IDs>
+		
+		if (idGroups == null) {
+			return;
 		}
 		
-		String[] dayss = allday.split(",");
-		List<String> days = java.util.Arrays.asList(dayss);
+		for (String saveName : idGroups.keySet()) {
+			
+			String savePath = saveName;
+			String[] forids = idGroups.get(saveName);			
+			
+			Map<String,Map<String, int[]>> allDayAllBays = getAllBayAlldays(filePath, forids);
+			Map<String, int[]> oneBayAlldaysMean = getAllBayMeans(allDayAllBays);
+			Map<String, int[]> oneBayAlldaysMode = getAllBayModes(allDayAllBays);
+			List<List<int [][]>> toSave = getSaveMatrix(allDayAllBays,oneBayAlldaysMean,oneBayAlldaysMode,forids,group, startIndex, endIndex, intervalNum, outN);
+			
+
+			try {
+				saveGroup(savePath, toSave);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}	
+	}
+	
+	public static Map<String, int[]> getAllBayModes(Map<String,Map<String, int[]>> allDayAllBays) {
+		Map<String, int[]> allBayMode = new HashMap<String, int[]>();
+		for (String id : allDayAllBays.keySet()) {
+			Map<String, int[]> oneBayAllDay = allDayAllBays.get(id);
+			int perDay = oneBayAllDay.get(oneBayAllDay.keySet().toArray()[0].toString()).length;
+			int dayNum = oneBayAllDay.keySet().size();
+			int[][] matrix = new int[dayNum][perDay];
+			int dn = 0;
+			int[] mode = new int[perDay];
+			for (String day : oneBayAllDay.keySet()) {
+				int[] temp = oneBayAllDay.get(day);
+				for (int i = 0; i < temp.length; i++) {
+					matrix[dn][i] = temp[i]/5 * 5;
+				}
+				dn ++;
+			}
+			for (int i = 0; i < perDay; i++) {
+				Map<Integer,Integer> cal = new HashMap<Integer,Integer>();
+				for (int j = 0; j < dayNum; j++) {
+					if (cal.get(matrix[j][i]) != null) {
+						int old = matrix[j][i];
+						int ne = old + 1;
+						cal.put(matrix[j][i], ne);
+					}else {
+						cal.put(matrix[j][i], 1);
+					}
+				}
+				int m = 0;
+				int max = 0;
+				for (int key : cal.keySet()) {
+					int value = cal.get(key);
+					if (value > max) {
+						m = key;
+						max = value;
+					}
+				}
+				mode[i] = m;
+			}
+			allBayMode.put(id, mode);
+		}
+		return allBayMode;
+	}
+	
+	public static Map<String, int[]> getAllBayMeans(Map<String,Map<String, int[]>> allDayAllBays) {
+		Map<String, int[]> oneBayAlldaysMean = new HashMap<String, int[]>();
+		for (String id : allDayAllBays.keySet()) {
+			Map<String, int[]> oneBayAllDay = allDayAllBays.get(id);
+			int[] temp = new int[oneBayAllDay.get(oneBayAllDay.keySet().toArray()[0].toString()).length];
+			for (String day : oneBayAllDay.keySet()) {
+				int[] oneBayoneDay = oneBayAllDay.get(day);
+
+				for (int i = 0; i < oneBayoneDay.length; i++) {
+					temp[i] += oneBayoneDay[i];
+				}
+			}
+			int n = oneBayAllDay.size();
+			for (int i = 0; i < temp.length; i++) {
+				temp[i] /= n;
+			}
+			oneBayAlldaysMean.put(id, temp);
+		}
+		return oneBayAlldaysMean;
+	}
+	
+	public static List<List<int [][]>> getSaveMatrix(Map<String,Map<String, int[]>> allDayAllBays,Map<String, int[]> oneBayAlldaysMean,Map<String, int[]> oneBayAlldaysMode,String[] ids,String group,int startIndex,int endIndex,int intervalNum,int outN){
+		List<List<int [][]>> toSave = new ArrayList<List<int[][]>>();
+		List<String> saveDays = new ArrayList<String>();
+		List<Set<String>> d = new ArrayList<Set<String>>();
+		for (String id : allDayAllBays.keySet()) {
+			Set<String> x = allDayAllBays.get(id).keySet();
+			d.add(x);
+		}
+		for (int i = 1; i < d.size(); i++) {
+			d.get(0).retainAll(d.get(i));//取交集
+		}
 		
+		for (String day : d.get(0)) {
+			List<int[][]> oneDayAllBays = new ArrayList<int[][]>();
+			for (String id: ids) {
+				Map<String, int[]> oneBayAlldays = allDayAllBays.get(id);
+				if (oneBayAlldays.containsKey(day)) {
+					int[][] oneDayOneBay = cutVec(oneBayAlldays.get(day), startIndex, endIndex,intervalNum,outN);
+					oneDayAllBays.add(oneDayOneBay);
+					
+					int[][] oneBayMeans = cutVec(oneBayAlldaysMean.get(id), startIndex, endIndex,intervalNum,outN);
+					oneDayAllBays.add(oneBayMeans);
+					
+					int[][] oneBayModes = cutVec(oneBayAlldaysMode.get(id), startIndex, endIndex,intervalNum,outN);
+					oneDayAllBays.add(oneBayModes);
+				}else {
+					oneDayAllBays.clear();
+					break;
+				}
+				
+			}
+			if (oneDayAllBays.size() != 0) {
+				saveDays.add(day);
+				toSave.add(oneDayAllBays);
+			}
+		}
+		System.out.println("for group:"+ group +",days:"+ saveDays.toString());
+		return toSave;
+	}
+	
+	public static Map<String,Map<String, int[]>> getAllBayAlldays(String filePath,String[] forids){
+		Map<String,Map<String, int[]>> allDayAllBays = new HashMap<String, Map<String,int[]>>();
+		//<date,vector>for one bay
+		
+		for (int i = 0; i < 3; i++) { //3表示取三个卡口为一组
+			Map<String, int[]> dayMap = null;
+			try {
+				dayMap = getVec(filePath+forids[i]);
+				allDayAllBays.put(forids[i], dayMap);
+			} catch (FileNotFoundException e) {
+				System.out.println("file:"+ filePath+forids[i] +" is not found!");
+			}
+			
+		}
+		return allDayAllBays;
+	}
+	
+	public static Map<String, String[]> getIdGroup(String group,String filePath,String saveBase){
 		//delete the IDs that don't have data file
 		String[] allIds = group.split(",");
 		List<String> ids = findFiles(allIds, filePath);
 		
 		if (ids == null || ids.size()<3) {
-			return;
+			return null;
 		}
-		while (ids.size() > 3) { //小于三个卡口的分组删除
+		while (ids.size() > 3) { 
 			ids.remove(3);
 		}
 		
 		Map<String, String[]> idGroups = new HashMap<String, String[]>();
 		
-		/*for (String id : ids) {
-			String[] bayId = {id};
-			idGroups.put(saveBase+id,bayId);
-		}*/
 		String[] idsarr = new String[ids.size()];
 		ids.toArray(idsarr);
 		String name = "";
@@ -83,65 +227,8 @@ public class D_Spliter {
 			
 		}
 		
-		idGroups.put(saveBase+"g"+name, idsarr);		
-		System.out.println(saveBase);
-		for (String saveName : idGroups.keySet()) {
-			
-			String savePath = saveName;
-			String[] forids = idGroups.get(saveName);			
-			
-			List<Map<String, int[]>> allDayAllBays = new ArrayList<Map<String,int[]>>();
-			//<date,vector>for one bay
-			
-			for (int i = 0; i < 3; i++) { //3表示取三个卡口为一组
-				Map<String, int[]> dayMap = null;
-				try {
-					dayMap = getVec(filePath+forids[i]);
-					allDayAllBays.add(dayMap);
-				} catch (FileNotFoundException e) {
-					System.out.println("file:"+ saveName +" is not found!");
-				}
-				
-			}
-			
-			List<List<int [][]>> toSave = new ArrayList<List<int[][]>>();
-			List<String> saveDays = new ArrayList<String>();
-			List<Set<String>> d = new ArrayList<Set<String>>();
-			for (Map<String, int[]> oneBayAlldays: allDayAllBays) {
-				Set<String> x = oneBayAlldays.keySet();
-				d.add(x);
-			}
-			for (int i = 1; i < d.size(); i++) {
-				d.get(0).retainAll(d.get(i));
-			}
-			
-			for (String day : d.get(0)) {
-				List<int[][]> oneDayAllBays = new ArrayList<int[][]>();
-				for (Map<String, int[]> oneBayAlldays: allDayAllBays) {
-					if (oneBayAlldays.containsKey(day)) {
-						int[][] oneDayOneBay = cutVec(oneBayAlldays.get(day), startIndex, endIndex,intervalNum,outN);
-						oneDayAllBays.add(oneDayOneBay);
-					}else {
-						oneDayAllBays.clear();
-						System.out.println(saveName + " lack the vector of date:" + day);
-						break;
-					}
-					
-				}
-				if (oneDayAllBays.size() != 0) {
-					saveDays.add(day);
-					toSave.add(oneDayAllBays);
-				}
-			}
-			System.out.println("for group:"+Arrays.toString(forids)+":days:"+ saveDays.toString());
-
-			try {
-				saveGroup(savePath, toSave);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}	
+		idGroups.put(saveBase+"g"+name, idsarr);
+		return idGroups;
 	}
 	
 	public static List<String> findFiles(String[] ids,String folder) {

@@ -31,7 +31,7 @@ import java.util.Set;
 public class A_DataGetter {
 	
 	public static String resultBase = "result/";
-	public static int defaultInterval = 60 * 5;//default time  interval(5min)
+	public static int defaultInterval = 60 * 12;//time  interval(default 12min)
 	
 	/**
 	 * @return  Map<String, int[][]>(id,traffic flow per interval)

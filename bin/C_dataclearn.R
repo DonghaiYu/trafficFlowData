@@ -17,9 +17,9 @@ minDays = 4
 #有数据的天数小于minDays时认为卡口数据缺失严重，此卡口数据不使用
 zeroThreshold = 8
 #白天流量为0的时间段超过 zeroThreshold 次就认为数据缺失严重，这一天的数据不使用
-daytimeStart = 80
+daytimeStart = 33
 #24小时中开始使用数据的位置
-daytimeEnd = 240
+daytimeEnd = 100
 #24小时中结束使用数据的位置
 
 #遍历每一个卡口数据文件
@@ -38,7 +38,7 @@ for (idNum in 1:length(folder)){
 	}
 	
 	if( nrow(mat) < minDays ){
-		#每月数据量小于5天的卡口删除
+		#每月数据量小于minDays天的卡口删除
 		deletIDNum = deletIDNum + 1
 		next
 	}
@@ -80,7 +80,8 @@ for (idNum in 1:length(folder)){
 	
 	y = nrow(m)#天数
 	x = ncol(m)#每天统计数据个数
-	
+	losH = x*2/7#白天开始
+	losE = x*13/14#白天结束
 
 	#每个时间段的平均值
 	avg = colMeans(m)
@@ -93,7 +94,8 @@ for (idNum in 1:length(folder)){
 		#七分位数
 		sevenSP = sort(oneInter)[floor(y*0.7)]
 		for( k in 1 : y){
-			if(m[k,j] > (3*sevenSP) && m[k,j] > 100){
+		    #修正白天大于三倍七分位数的异常点
+			if(m[k,j] > (3*sevenSP) && j<losE && j>losH){
 				ch = ch + 1
 				chv = avg[j]
 				if( j != 1 && j < y ){
@@ -103,10 +105,16 @@ for (idNum in 1:length(folder)){
 				m[k,j] = floor(chv)
 				print(paste("change outliers ",ch," id ",id," day: ",k," interval: ",j,msep=""))
 			}
+			#修正白天丢失点
+			
+			if(m[k,j] < (avg[j]/5) && j<losE && j>losH){
+				m[k,j] = avg[j]
+				ch = ch + 1
+			}
 		}
 	}
 	#normalization or not
-	m = scale(m,center=TRUE,scale=TRUE)
+	#m = scale(m,center=TRUE,scale=TRUE)
 
 	co = ncol(m)/stp+1
 	tosave = matrix(nrow=nrow(m),ncol=co)
