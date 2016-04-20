@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,37 +25,37 @@ import java.util.Set;
 
 
 public class D_Spliter {
-	public static String USAGE = "java -jar spliter.jar [filePath] [saveFolder] [ids] [targetLength] [cutStartIndex] [cutEndIndex] [totalVectorLength]";
+	public static String USAGE = "java -jar spliter.jar [filePath] [saveFolder] [ids] [targetLength] [cutStartIndex] [cutEndIndex] [totalVectorLength] [rankDistance] [groupsize]";
 	
 	
-
-	
-	public static void main(String[] args) {		
-		
-		String  filePath = "result/byids/";
+	public static void excute(String[] args){
+		String  filePath = "result/cleaned_byids/";
 		String saveBase = "result/ANNinput/";
-		String group = "371300403101_01,371300403101_03,371300403102_00";
+		String group = "371300403101_01";
 		int outN = 1;
 		int startIndex = 1;
 		//4 * 60 / 12;
 		int endIndex = 3 * 60 / 12;
-		int intervalNum = 20;		
-		
-		/*if (args.length > 6) {
+		int intervalNum = 31;
+		int rankDistance = 5;
+		int gsize = 3;
+		if (args.length > 8) {
 			filePath = args[0];
 			saveBase = args[1];
-			group = args[3];
-			outN = Integer.parseInt(args[4]);
-			startIndex = Integer.parseInt(args[5]);
-			endIndex = Integer.parseInt(args[6]);
-			intervalNum = Integer.parseInt(args[7]);
+			group = args[2];
+			outN = Integer.parseInt(args[3]);
+			startIndex = Integer.parseInt(args[4]);
+			endIndex = Integer.parseInt(args[5]);
+			intervalNum = Integer.parseInt(args[6]);
+			rankDistance = Integer.parseInt(args[7]);
+			gsize = Integer.parseInt(args[8]);
 		}else {
 			System.out.println("parameters not enough");
 			System.out.println(USAGE);
 			return;
-		}*/
+		}
 		
-		Map<String, String[]> idGroups = getIdGroup(group, filePath, saveBase);
+		Map<String, String[]> idGroups = getIdGroup(group, filePath, saveBase,gsize);
 		//<saveName,IDs>
 		
 		if (idGroups == null) {
@@ -68,10 +69,10 @@ public class D_Spliter {
 			
 			Map<String,Map<String, int[]>> allDayAllBays = getAllBayAlldays(filePath, forids);
 			Map<String, int[]> oneBayAlldaysMean = getAllBayMeans(allDayAllBays);
-			Map<String, int[]> oneBayAlldaysMode = getAllBayModes(allDayAllBays);
+			Map<String, int[]> oneBayAlldaysMode = getAllBayModes(allDayAllBays,rankDistance);
 			List<List<int [][]>> toSave = getSaveMatrix(allDayAllBays,oneBayAlldaysMean,oneBayAlldaysMode,forids,group, startIndex, endIndex, intervalNum, outN);
 			
-
+	
 			try {
 				saveGroup(savePath, toSave);
 			} catch (IOException e) {
@@ -80,7 +81,20 @@ public class D_Spliter {
 		}	
 	}
 	
-	public static Map<String, int[]> getAllBayModes(Map<String,Map<String, int[]>> allDayAllBays) {
+	public static void main(String[] args) {		
+		/*String[] argString = {"result/cleaned_byids/","result/ANNinput/","371302981098_03","1","20","20","21","5"};
+		File fold = new File("result/cleaned_byids/");
+		File[] ls = fold.listFiles();
+		for (int i = 0; i < ls.length; i++) {
+			String name = ls[i].getName();
+			argString[2] = name;
+			excute(argString);
+			System.out.println(i+"/"+ls.length);
+		}*/
+		excute(args);
+	}
+	
+	public static Map<String, int[]> getAllBayModes(Map<String,Map<String, int[]>> allDayAllBays,int stage) {
 		Map<String, int[]> allBayMode = new HashMap<String, int[]>();
 		for (String id : allDayAllBays.keySet()) {
 			Map<String, int[]> oneBayAllDay = allDayAllBays.get(id);
@@ -92,7 +106,7 @@ public class D_Spliter {
 			for (String day : oneBayAllDay.keySet()) {
 				int[] temp = oneBayAllDay.get(day);
 				for (int i = 0; i < temp.length; i++) {
-					matrix[dn][i] = temp[i]/5 * 5;
+					matrix[dn][i] = temp[i]/stage * stage;
 				}
 				dn ++;
 			}
@@ -144,6 +158,18 @@ public class D_Spliter {
 		return oneBayAlldaysMean;
 	}
 	
+	public static int[][] meanMatrix(int[][] a,int[][] b,int[][] c) {
+		int x = a.length;
+		int y = a[0].length;
+		int[][] result = new int[x][y];
+		for (int i = 0; i < x; i++) {
+			for (int j = 0; j < y; j++) {
+				result[i][j] = (a[i][j]+b[i][j]+c[i][j])/3;
+			}
+		}
+		return result;
+	}
+	
 	public static List<List<int [][]>> getSaveMatrix(Map<String,Map<String, int[]>> allDayAllBays,Map<String, int[]> oneBayAlldaysMean,Map<String, int[]> oneBayAlldaysMode,String[] ids,String group,int startIndex,int endIndex,int intervalNum,int outN){
 		List<List<int [][]>> toSave = new ArrayList<List<int[][]>>();
 		List<String> saveDays = new ArrayList<String>();
@@ -155,20 +181,28 @@ public class D_Spliter {
 		for (int i = 1; i < d.size(); i++) {
 			d.get(0).retainAll(d.get(i));//取交集
 		}
-		
-		for (String day : d.get(0)) {
+		List<String> dd = new ArrayList<String>(d.get(0)); 
+		Collections.sort(dd);
+		//System.out.println(dd.toString());
+		for (String day : dd) {
 			List<int[][]> oneDayAllBays = new ArrayList<int[][]>();
 			for (String id: ids) {
 				Map<String, int[]> oneBayAlldays = allDayAllBays.get(id);
 				if (oneBayAlldays.containsKey(day)) {
 					int[][] oneDayOneBay = cutVec(oneBayAlldays.get(day), startIndex, endIndex,intervalNum,outN);
 					oneDayAllBays.add(oneDayOneBay);
-					
+
+					//*********************
 					int[][] oneBayMeans = cutVec(oneBayAlldaysMean.get(id), startIndex, endIndex,intervalNum,outN);
 					oneDayAllBays.add(oneBayMeans);
 					
 					int[][] oneBayModes = cutVec(oneBayAlldaysMode.get(id), startIndex, endIndex,intervalNum,outN);
 					oneDayAllBays.add(oneBayModes);
+					/*int[][] mm = meanMatrix(oneDayOneBay, oneBayMeans, oneBayModes);
+					for (int i = 0; i < 3; i++) {
+						oneDayAllBays.add(oneDayOneBay);
+					}*/
+					//oneDayAllBays.add(mm);
 				}else {
 					oneDayAllBays.clear();
 					break;
@@ -180,7 +214,8 @@ public class D_Spliter {
 				toSave.add(oneDayAllBays);
 			}
 		}
-		System.out.println("for group:"+ group +",days:"+ saveDays.toString());
+		System.out.println("group:"+group);
+		System.out.println("days:"+ saveDays.toString());
 		return toSave;
 	}
 	
@@ -188,7 +223,7 @@ public class D_Spliter {
 		Map<String,Map<String, int[]>> allDayAllBays = new HashMap<String, Map<String,int[]>>();
 		//<date,vector>for one bay
 		
-		for (int i = 0; i < 3; i++) { //3表示取三个卡口为一组
+		for (int i = 0; i < forids.length; i++) { //3表示取三个卡口为一组
 			Map<String, int[]> dayMap = null;
 			try {
 				dayMap = getVec(filePath+forids[i]);
@@ -201,16 +236,17 @@ public class D_Spliter {
 		return allDayAllBays;
 	}
 	
-	public static Map<String, String[]> getIdGroup(String group,String filePath,String saveBase){
+	public static Map<String, String[]> getIdGroup(String group,String filePath,String saveBase,int size){
 		//delete the IDs that don't have data file
 		String[] allIds = group.split(",");
 		List<String> ids = findFiles(allIds, filePath);
 		
-		if (ids == null || ids.size()<3) {
+		//*******************
+		if (ids == null || ids.size()<size) {
 			return null;
 		}
-		while (ids.size() > 3) { 
-			ids.remove(3);
+		while (ids.size() > size) { 
+			ids.remove(size);
 		}
 		
 		Map<String, String[]> idGroups = new HashMap<String, String[]>();
@@ -218,7 +254,7 @@ public class D_Spliter {
 		String[] idsarr = new String[ids.size()];
 		ids.toArray(idsarr);
 		String name = "";
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < idsarr.length; i++) {
 			if (i == 0) {
 				name = idsarr[i];
 			}else {
@@ -366,7 +402,6 @@ public class D_Spliter {
 			int num = oneDayAllBays.size();
 			int x = oneDayAllBays.get(0)[0].length;
 			int y = oneDayAllBays.get(0).length;
-			
 			for (int i2 = 0; i2 < y; i2++) {
 				for (int j = 0; j < num; j++) {
 					for (int k = 0; k < x - 1; k++) {
@@ -378,11 +413,15 @@ public class D_Spliter {
 					}
 					
 				}
-				/*for (int j = 0; j < num; j++) {
-					fw.write(","+oneDayAllBays.get(j)[i2][x-1]);
-				}*/
-				fw.write(","+oneDayAllBays.get(0)[i2][x-1]);
-				fw.write("\n");
+				/*int xx = 0;
+				for (int j = 0; j < num/3; j++) {
+					xx += oneDayAllBays.get(j*3)[i2][x-1];
+					//fw.write(","+oneDayAllBays.get(j*3)[i2][x-1]);
+				}
+				xx/=3;
+				fw.write(","+xx+"\n");*/
+				fw.write(","+oneDayAllBays.get(0)[i2][x-1]+"\n");
+				
 			}
 		}
 		

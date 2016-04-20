@@ -13,7 +13,7 @@ UsefulIDNum = 0
 deletIDNum = 0
 ch = 0
 
-minDays = 4
+minDays = 10
 #有数据的天数小于minDays时认为卡口数据缺失严重，此卡口数据不使用
 zeroThreshold = 8
 #白天流量为0的时间段超过 zeroThreshold 次就认为数据缺失严重，这一天的数据不使用
@@ -24,6 +24,7 @@ daytimeEnd = 100
 
 #遍历每一个卡口数据文件
 for (idNum in 1:length(folder)){
+	#print(paste(idNum,"/",length(folder)))
 
 	f = paste(path,folder[idNum],sep="")
 	id = folder[idNum]
@@ -44,7 +45,7 @@ for (idNum in 1:length(folder)){
 	}
 	UsefulIDNum = UsefulIDNum + 1
 	
-	# stp表示将几个相邻数据相加，即处理后的数据是几个5分钟的流量
+	# stp表示将几个相邻数据相加，即处理后的数据是几个interval的流量
 	ma = matrix(as.numeric(mat),nrow=nrow(mat))
 	m = matrix(nrow=nrow(mat),ncol=ncol(mat)/stp)
 	ind <- seq(1, ncol(mat), by = stp)
@@ -56,6 +57,8 @@ for (idNum in 1:length(folder)){
 		m[,(i+stp-1)/stp] = temp
 	}
 	
+	
+	
 	allDaysData = m
 	noisDays = c()
 	
@@ -65,12 +68,18 @@ for (idNum in 1:length(folder)){
 			noisDays = c(noisDays,i)
 		}
 	}
-	normalDaysData = m[-noisDays,]
-	noisDaysData = m[noisDays,]
-	
-	#当噪音天数少于1/3时，删除噪音天的数据
+	#print(paste("noisDays:",length(noisDays)))
+
 	normN = nrow(m) - length(noisDays)
 	noisN = length(noisDays)
+	normalDaysData = m
+	if(noisN != 0) {
+		normalDaysData = m[-noisDays,]
+	}
+	#noisDaysData = m[noisDays,]
+	
+	#当噪音天数少于1/3时，删除噪音天的数据
+	
 	maxNoise = nrow(m)/3
 	#print(paste("id",id,"normN",normN,"noisN",noisN,sep=";"))
 	if(noisN > 0 && noisN <= maxNoise){
@@ -103,12 +112,12 @@ for (idNum in 1:length(folder)){
 				}
 				
 				m[k,j] = floor(chv)
-				print(paste("change outliers ",ch," id ",id," day: ",k," interval: ",j,msep=""))
+				#print(paste("change outliers ",ch," id ",id," day: ",k," interval: ",j,msep=""))
 			}
 			#修正白天丢失点
 			
 			if(m[k,j] < (avg[j]/5) && j<losE && j>losH){
-				m[k,j] = avg[j]
+				m[k,j] = floor(avg[j])
 				ch = ch + 1
 			}
 		}
@@ -123,6 +132,5 @@ for (idNum in 1:length(folder)){
 		tosave[,i] = m[,i-1]
 	}
 	write.table(tosave, file = paste("E://javacode/trafficFlowData/result/cleaned_byids/",id,sep=""),sep=",", row.names = FALSE,col.names = FALSE,quote = FALSE)
-	
 }
 
