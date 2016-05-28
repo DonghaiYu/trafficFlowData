@@ -223,7 +223,7 @@ public class D_Spliter {
 		Map<String,Map<String, int[]>> allDayAllBays = new HashMap<String, Map<String,int[]>>();
 		//<date,vector>for one bay
 		
-		for (int i = 0; i < forids.length; i++) { //3表示取三个卡口为一组
+		for (int i = 0; i < forids.length; i++) { 
 			Map<String, int[]> dayMap = null;
 			try {
 				dayMap = getVec(filePath+forids[i]);
